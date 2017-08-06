@@ -1,5 +1,5 @@
 package com.zuoqiang.ThreadManagement.t2;
-
+/*线程的中断*/
 public class PrimeGenerator extends  Thread {
     public void run(){
         long number=1L;
