@@ -1,0 +1,67 @@
+一、ThreadPoolExcutor 有四个构造器，一般情况下如果自己不定义的情况下，我们使用
+
+    (ThreadPoolExecutor) Executors.具体四种创建线程池方法();
+
+1）newCachedThreadPool（）方法 创建了一个缓冲线程池，如果任务很短或者线程数量合理的情况下建议使用
+   因为它们会在  线程池里没有空闲的线程可用的时候，然后为接收到的每一个任务都创建一个新线程，
+   当发送大量新任务给线程池，系统将会超负荷，应用程序性能将会不佳。
+
+2）newFixedThreadPool() 方法创建了一个 固定大小的线程池。线程池有个最大数量，如果发送超过数量的任务
+   时候，线程池不会创建额外的任务，剩下的任务直到 执行器有空闲的线程可用。这个特性保证线程的性能不会太差。
+
+3）newSingleThreadExecutor（）创建单线程的线程池，同一时间只能执行一个任务。
+
+
+二、使用callable启动并发任务并返回结果
+    isDone() 检查方法的状态
+    call（）方法获取返回的结果，使用get() 方法。 这个方法一直等到callable对象的call方法执行完成并返回结果。在调用
+    方法，如果Future控制的任务尚未完成，则get方法一直阻塞到任务完成。
+
+三、 运行多个任务并处理第一个结果
+    invokeAny 发送任务列表给执行器，然后返回第一个完成任务且没有抛出异常的任务的执行结果
+
+
+
+四、 运行多个任务并处理所有结果
+    如果想要等待所有任务结束，有两种方法
+    1）isDone() 如果任务结束结果将为true     （不建议）
+    2) 必须先shutdown（结束执行器）然后awaitTermination(等待所有任务结束)   （不建议）。
+    建议使用下面这种方法
+    3) ThreadPoolExcutor 提供了 invokeAll(任务列表) （发送一个任务列表给执行器 ，然后等待列表中所有任务完成）。
+       他接收Callable对象的列表，返回值是一个Future列表（使用future对象仅用来获取任务的结果）。
+
+
+五、在任务延时器中执行任务
+    1）ScheduledThreadPoolExecutor executor = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(线程池拥有的线程数);
+       executor.schedule(任务,任务执行前等待的时间,TimeUnit.等待时间的单位);
+       开发定时任务的时候，建议只选择ScheduledThreadPoolExecutor。
+    2）调用shutdown而且仍有任务要处理的时候，可以配置是否执行，默认仍然执行。
+
+六、定时执行任务（执行周期性任务）
+    1）推荐使用Excutors工厂类生成ScheduleExecutorService对象，
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(线程数量);
+    2）使用scheduleAtFixedRate(runnable任务, 任务第一次执行的延后时间, 两次执行的时间周期, TimeUnit.时间单位);
+       它返回一个ScheduledFxuture对象。getDelay()返回任务到下一次执行要的等待的剩余时间。
+
+
+七、在线程池中取消任务
+    使用Future接口的cancel来执行取消操作。
+    1)当任务已经完成，或者之前已经被取消掉的话，方法返回false并且不能被取消。
+    2）当任务还在等待分配线程时候，任务被取消；当任务已经开始执行的话，取决于cancel()方法所传递的参数。如果传递为true的时候并且
+       任务正在运行，将要被取消；如果为false且任务正在进行，则不能被取消；
+
+八、在执行器中控制任务的完成
+    FutureTask类提供了done方法，允许在执行器中的任务执行结束以后，还可以执行一些代码。可以被用来执行后期处理操作，我们只
+    1）需要覆盖FutureTask类，实现done()方法来改变这个行为（方法默认是空的），FutureTask是在创建好返回值还有isdone的状态以后
+    在内部自动调用的。
+    2）它无法改变任务的结果值，也无法改变任务的状态，但是 可以通过任务关闭资源，输出日志，发出通知等等。
+
+九、（*仅仅了解即可）在任务执行器中分离任务的启动与结果的处理
+    使用CompletionService类--------
+
+十、处理在线程池中被拒绝的任务
+  当我们调用 shutdown想结束线程池，实际上，线程池只有等待 正在运行任务或者 等待执行任务结束以后 才真正结束。
+  1）如果在调用shutdown和真正结束之间 发送任务给线程池，任务会被拒绝，因为这个线程池已经不接受任务了，ThreadPoolExecutor提供了一
+  套机制来 ，根据和这个机制当任务被拒绝，如何处理他们。
+  2）实现RejectedExecutionHandler接口
+    ThreadPoolExcutor.setRejectedExecutionHandler 来设置拒绝器。
